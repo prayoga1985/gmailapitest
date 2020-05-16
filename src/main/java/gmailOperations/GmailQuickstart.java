@@ -14,12 +14,15 @@ import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.GmailScopes;
 import com.google.api.services.gmail.model.Label;
 import com.google.api.services.gmail.model.ListLabelsResponse;
+import com.google.api.services.gmail.model.ListMessagesResponse;
+import com.google.api.services.gmail.model.Message;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,7 +33,7 @@ public class GmailQuickstart {
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
 
-    private static final List<String> SCOPES = Collections.singletonList(GmailScopes.GMAIL_LABELS);
+    private static final List<String> SCOPES = Collections.singletonList(GmailScopes.MAIL_GOOGLE_COM);
     private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 
     /**
@@ -57,8 +60,30 @@ public class GmailQuickstart {
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 
-    public static void main(String... args) throws IOException, GeneralSecurityException {
-        // Build a new authorized API client service.
+    /**
+     * <p>reads first 50 messages from inbox</p>
+     * @throws IOException 
+     * @throws GeneralSecurityException 
+     */
+    public static void readMessagesList() throws GeneralSecurityException, IOException {
+    	 final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+         Gmail service = new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+                 .setApplicationName(APPLICATION_NAME)
+                 .build();
+         String user = "me";
+         ListMessagesResponse response = service.users().messages().list(user).setQ("from:psyoga1985@gmail.com").execute();
+         List<Message> messages = new ArrayList<Message>();
+         while(response.getMessages()!=null) {
+        	 messages.addAll(response.getMessages());
+         }
+         if(messages.size()<=0)System.out.println("no mails matching search");
+         for(Message message: messages) {
+        	 System.out.println(message.toPrettyString());
+         }
+    }
+    
+    
+    public static void labels() throws GeneralSecurityException, IOException {
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         Gmail service = new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
                 .setApplicationName(APPLICATION_NAME)
@@ -76,6 +101,14 @@ public class GmailQuickstart {
                 System.out.printf("- %s\n", label.getName());
             }
         }
+    }
+    
+    
+    public static void main(String... args) throws IOException, GeneralSecurityException {
+        // Build a new authorized API client service.
+    	
+    	readMessagesList();
+    	
     }
 
     
